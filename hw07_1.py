@@ -10,6 +10,7 @@ class Field:
 
 class Name(Field):
     def __init__(self, name: str):
+        super().__init__(name)
         self.name = name  # Виклик сеттера для перевірки
 
     @property
@@ -103,7 +104,7 @@ class AddressBook(UserDict):
     from datetime import timedelta
 
     def upcoming_birthdays(self, days=7):
-        today = datetime.now()
+        today = datetime.now().date()
         upcoming_contacts = []
 
         for record in self.data.values():
@@ -115,8 +116,11 @@ class AddressBook(UserDict):
                 # Если день рождения в ближайшие дни
                 if 0 <= delta <= days:
                     upcoming_contacts.append(record)
-
-        return upcoming_contacts
+                elif delta < 0 and abs(delta) <= days:
+                    upcoming_contacts.append(record)
+        if upcoming_contacts:
+            return upcoming_contacts
+        return "No upcoming birthdays."
     
     def input_error(func):
         def wrapper(*args, **kwargs):
@@ -139,18 +143,18 @@ class AddressBook(UserDict):
         return f"Birthday for {name} added."
 
     @input_error
-    def show_birthday(args, book):
+    def show_birthday( self, args):
         name = args[0]
-        record = book.find(name)  # Знайти контакт
+        record = self.find(name)  # Знайти контакт
         if record and record.birthday:
-            return f"Birthday{name} - {record.birthday.value.strftime('%d.%m.%Y')}."
+            return f"Birthday for {name} - {record.birthday.value.strftime('%d.%m.%Y')}."
         return f"No birthday for {name}."
 
     @input_error
-    def birthdays(args, book):
-        upcoming = book.upcoming_birthdays()
+    def birthdays(self):
+        upcoming = self.upcoming_birthdays()
         if not upcoming:
-            return "There are no birthdays for the coming week."
+            return "No birthdays in the coming week."
         return "\n".join(f"{record.name.name} - {record.birthday.value.strftime('%d.%m.%Y')}" for record in upcoming) 
     
     def add_contact(self, name: str, phone_number: str):
@@ -180,13 +184,16 @@ class AddressBook(UserDict):
     
 def main():
     def parse_input(user_input):
-        return user_input.strip().split(maxsplit=1)
+        return user_input.strip().split()
     book = AddressBook()
     print("Welcome to the assistant bot!")
     while True:
-        user_input = input("Enter a command: ")
+        user_input = input("Enter a command: ").strip()
+        if not user_input:
+            print("Please enter a command.")
+            continue
         command, *args = parse_input(user_input)
-
+        
         if command in ["close", "exit"]:
             print("Good bye!")
             break
@@ -247,5 +254,5 @@ def main():
 
     # Видалення запису Jane
     book.delete("Jane")
-    if __name__ == "__main__":
+if __name__ == "__main__":
         main()
